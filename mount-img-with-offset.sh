@@ -28,7 +28,7 @@ fi
 readonly FDISK_INFO=$(/sbin/fdisk --list --units=sectors --color=always "${VM_IMAGE}");
 printf "${FDISK_INFO}\n\n" | tail -n +9;
 readonly PARTITION_OFFSET=$(
-	printf "${FDISK_INFO}" | grep -E "83 Linux|Sector size" | sed -nr 'N;s/^Sector\ssize\s\(logical\/physical\)\:\s([[:digit:]]+)\sbytes\s\/\s[[:digit:]]+\sbytes\n(..*)\s([[:digit:]]+)\s[[:digit:]]+\s[[:digit:]]+\s\s..*\s..\sLinux/\1\*\3/p';
+	printf "${FDISK_INFO}" | grep --extended-regexp "83 Linux|Sector size" | sed --quiet --regexp-extended 'N;s/^Sector\ssize\s\(logical\/physical\)\:\s([[:digit:]]+)\sbytes\s\/\s[[:digit:]]+\sbytes\n(..*)\s([[:digit:]]+)\s[[:digit:]]+\s[[:digit:]]+\s\s..*\s..\sLinux/\1\*\3/p';
 );
 
 if [[ $PARTITION_OFFSET -ne 0 ]]; then
