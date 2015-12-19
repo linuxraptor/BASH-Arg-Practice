@@ -8,9 +8,8 @@ if [ -n "$1" ]; then
 		exit 1;
 	fi
 else
-	readonly VM_IMAGE='/mnt/ssdstore/raspbian/2015-11-21-raspbian-jessie.img';
-	# printf "No arguments specified.\n";
-	# exit 1;
+	printf "No arguments specified.\n";
+	exit 1;
 fi
 
 
@@ -22,9 +21,8 @@ if [ -n "$2" ]; then
 		exit 1;
 	fi
 else
-	readonly MOUNT_DESTINATION='/mnt/temp';
-	# printf "Not enough arguments.\n";
-	# exit 1;
+	printf "Not enough arguments.\n";
+	exit 1;
 fi
 
 readonly FDISK_INFO=$(/sbin/fdisk --list --units=sectors --color=always "${VM_IMAGE}");
