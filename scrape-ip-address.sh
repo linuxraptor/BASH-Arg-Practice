@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#set -x;
-
 # Alright, let's hope the HTML this page spits out isnt too horrendous,
 # cuz this shit is BASIC.
 
@@ -49,4 +47,4 @@ else
 	printf "No response received.\n";
 	exit 1;
 fi
-#rm "${TEMPFILE}";
+rm "${TEMPFILE}";
