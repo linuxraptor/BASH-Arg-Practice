@@ -3,8 +3,8 @@
 if [ -n "$1" ]; then
 	FIRST_ARG=$1;
 	readonly VM_IMAGE=$(/usr/bin/readlink --canonicalize "${FIRST_ARG}");
-	if [ ! -e "$VM_IMAGE" ]; then
-		printf "File does not exist: \"$VM_IMAGE\"\n";
+	if [ ! -e "${VM_IMAGE}" ]; then
+		printf "File does not exist: \"${VM_IMAGE}\"\n";
 		exit 1;
 	fi
 else
@@ -16,8 +16,8 @@ fi
 if [ -n "$2" ]; then
 	SECOND_ARG=$2;
 	readonly MOUNT_DESTINATION=$(/usr/bin/readlink --canonicalize "${SECOND_ARG}");
-	if [ ! -e "$MOUNT_DESTINATION" ]; then
-		printf "Mount location does not exist: \"$MOUNT_DESTINATION\"\n";
+	if [ ! -e "${MOUNT_DESTINATION}" ]; then
+		printf "Mount location does not exist: \"${MOUNT_DESTINATION}\"\n";
 		exit 1;
 	fi
 else
@@ -26,24 +26,21 @@ else
 fi
 
 readonly FDISK_INFO=$(/sbin/fdisk --list --units=sectors --color=always "${VM_IMAGE}");
-printf "${FDISK_INFO}\n\n" | tail -n +9;
+printf "${FDISK_INFO}""\n\n" | tail -n +9;
 readonly PARTITION_OFFSET=$(
-	printf "${FDISK_INFO}" | grep --extended-regexp "83 Linux|Sector size" | sed --quiet --regexp-extended 'N;s/^Sector\ssize\s\(logical\/physical\)\:\s([[:digit:]]+)\sbytes\s\/\s[[:digit:]]+\sbytes\n(..*)\s([[:digit:]]+)\s[[:digit:]]+\s[[:digit:]]+\s\s..*\s..\sLinux/\1\*\3/p';
+	grep --extended-regexp "Apple HFS/HFS+|83 Linux|Sector size" <<< "${FDISK_INFO}" | sed --quiet --regexp-extended 'N;s/^Sector\ssize\s\(logical\/physical\)\:\s([[:digit:]]+)\sbytes\s\/\s[[:digit:]]+\sbytes\n(..*)\s([[:digit:]]+)\s[[:digit:]]+\s([[:digit:]]+)\s\s..*$/,offset=\$\(\(\1\*\3\)\),sizelimit=\$\(\(\1\*\4\)\)/p';
 );
 
-if [[ $PARTITION_OFFSET -ne 0 ]]; then
-	printf "Detected offset of first available linux partition: $PARTITION_OFFSET\n\n";
-	readonly OFFSET_ARG=",offset=\$(($PARTITION_OFFSET))";
-else
-	readonly OFFSET_ARG="";
+if [ -n "${PARTITION_OFFSET}" ]; then
+	printf "Offset required for first available Linux or OS X partition.\n\n";
 fi
 
-readonly MOUNT_COMMAND="/bin/mount --type auto --options loop$OFFSET_ARG --source \"${VM_IMAGE}\" --target \"${MOUNT_DESTINATION}\"";
+readonly MOUNT_COMMAND="/bin/mount --type auto --options loop"${PARTITION_OFFSET}" --source \""${VM_IMAGE}"\" --target \""${MOUNT_DESTINATION}"\"";
 
 printf "Running command:\n";
-printf "${MOUNT_COMMAND}\n";
+printf "${MOUNT_COMMAND}""\n";
 
-eval ${MOUNT_COMMAND};
+eval "${MOUNT_COMMAND}";
 
 # Where does the offset come from?
 # https://www.raspberrypi.org/forums/viewtopic.php?f=29&t=48811
