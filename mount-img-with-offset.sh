@@ -19,7 +19,7 @@ if [ -n "$1" ]; then
 	FIRST_ARG=$1;
 	readonly VM_IMAGE=$(/usr/bin/readlink --canonicalize "${FIRST_ARG}");
 	if [ ! -e "${VM_IMAGE}" ]; then
-		printf "File does not exist: \""${VM_IMAGE}"\"\n";
+		printf "File does not exist: \"%s\"\n" "${VM_IMAGE}";
 		exit 1;
 	fi
 else
@@ -32,7 +32,7 @@ if [ -n "$2" ]; then
 	SECOND_ARG=$2;
 	readonly MOUNT_DESTINATION=$(/usr/bin/readlink --canonicalize "${SECOND_ARG}");
 	if [ ! -e "${MOUNT_DESTINATION}" ]; then
-		printf "Mount location does not exist: \""${MOUNT_DESTINATION}"\"\n";
+		printf "Mount location does not exist: \"%s\"\n" "${MOUNT_DESTINATION}";
 		exit 1;
 	fi
 else
@@ -51,8 +51,8 @@ then
 		LINE_NUMBER=0;
 		AVAILABLE_FORMATTING_SPACE='  ';
 		printf "Please choose a partition:\n";
-		printf "     ""${FDISK_COLUMN_TITLES}""\n";
-		while read LINE;
+		printf "     %s\n" "${FDISK_COLUMN_TITLES}";
+		while read -r LINE;
 		do
 			((LINE_NUMBER++))
 			# If you have ten or more partitions on one device or image, then you need to rethink your storage strategy.
@@ -60,27 +60,27 @@ then
 			then
 				AVAILABLE_FORMATTING_SPACE=' ';
 			fi
-			printf "("${LINE_NUMBER}")";
-			printf "${AVAILABLE_FORMATTING_SPACE}";
-			printf "${LINE}""\n";
+			printf "(%s)" "${LINE_NUMBER}";
+			printf %s "${AVAILABLE_FORMATTING_SPACE}";
+			printf "%s\n" "${LINE}";
 		done <<< "${FDISK_AVAILABLE_PARTITIONS}";
 		printf "\n";
 		
-		printf "Choose the partition you would like to mount [1-"${LINE_NUMBER}"]: ";
-		read CHOSEN_PARTITION_NUMBER;
+		printf "Choose the partition you would like to mount [1-%s]: " "${LINE_NUMBER}";
+		read -r CHOSEN_PARTITION_NUMBER;
 		
 		while ! [[ "${CHOSEN_PARTITION_NUMBER}" =~ ^[0-9]+$ ]] || [ "${CHOSEN_PARTITION_NUMBER}" -eq 0 ] || [ ! "${CHOSEN_PARTITION_NUMBER}" -le "${LINE_NUMBER}" ];
 		do
 			printf "Requested partition number is out of range.\n";
 			printf "\n";
-			printf "Choose the partition you would like to mount [1-"${LINE_NUMBER}"]: ";
-			read CHOSEN_PARTITION_NUMBER;
+			printf "Choose the partition you would like to mount [1-%s]: " "${LINE_NUMBER}";
+			read -r CHOSEN_PARTITION_NUMBER;
 		done;
 	else
 		readonly CHOSEN_PARTITION_NUMBER=1;
 		printf "Mounting the following partition:\n";
-		printf "     ""${FDISK_COLUMN_TITLES}""\n";
-		printf "     ""${FDISK_AVAILABLE_PARTITIONS}""\n";
+		printf "     %s\n" "${FDISK_COLUMN_TITLES}";
+		printf "     %s\n" "${FDISK_AVAILABLE_PARTITIONS}";
 	fi
 
 	readonly CHOSEN_PARTITION=$(head -n "${CHOSEN_PARTITION_NUMBER}" <<< "${FDISK_AVAILABLE_PARTITIONS}" | tail -n 1);
@@ -88,7 +88,7 @@ then
 		grep --extended-regexp "Sector size" <<< "${FDISK_INFO}" | sed --quiet --regexp-extended 's/^Sector\ssize\s\(logical\/physical\)\:\s([[:digit:]]+)\sbytes\s\/\s[[:digit:]]+\sbytes/\1/p';
 	);
 	readonly PARTITION_OFFSET="$(
-		sed --quiet --regexp-extended "s/(..*)\s+([[:digit:]]+)\s+[[:digit:]]+\s+([[:digit:]]+)\s+..*$/,offset=\$\(\("${SECTOR_SIZE}"\*\2\)\),sizelimit=\$\(\("${SECTOR_SIZE}"\*\3\)\)/p" <<< "${CHOSEN_PARTITION}";
+		sed --quiet --regexp-extended 's/(..*)\s+([[:digit:]]+)\s+[[:digit:]]+\s+([[:digit:]]+)\s+..*$/,offset=\$\(\('"${SECTOR_SIZE}"'\*\2\)\),sizelimit=\$\(\('"${SECTOR_SIZE}"'\*\3\)\)/p' <<< "${CHOSEN_PARTITION}";
 	)";
 	if [ -n "${PARTITION_OFFSET}" ]; then
 		printf "Offset required for this partition.\n\n";
@@ -97,10 +97,10 @@ else
 	readonly PARTITION_OFFSET='';
 fi;
 
-readonly MOUNT_COMMAND="/bin/mount --type auto --options loop"${PARTITION_OFFSET}" --source \""${VM_IMAGE}"\" --target \""${MOUNT_DESTINATION}"\"";
+readonly MOUNT_COMMAND="/bin/mount --type auto --options loop${PARTITION_OFFSET} --source \"${VM_IMAGE}\" --target \"${MOUNT_DESTINATION}\"";
 
 printf "Running command:\n";
-printf "${MOUNT_COMMAND}""\n";
+printf "%s\n" "${MOUNT_COMMAND}";
 
 eval "${MOUNT_COMMAND}";
 
