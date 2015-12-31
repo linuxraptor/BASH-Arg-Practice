@@ -46,7 +46,7 @@ readonly FDISK_AVAILABLE_PARTITIONS=$(tail -n +10 <<< "${FDISK_INFO}");
 readonly MORE_THAN_ONE_PARTITION=$(tail -n +11 <<< "${FDISK_INFO}");
 if [ -n "${FDISK_AVAILABLE_PARTITIONS}" ];
 then
-	if [[ -n "${MORE_THAN_ONE_PARTITION}" ]];
+	if [ -n "${MORE_THAN_ONE_PARTITION}" ];
 	then
 		LINE_NUMBER=0;
 		AVAILABLE_FORMATTING_SPACE='  ';
@@ -88,9 +88,8 @@ then
 		grep --extended-regexp "Sector size" <<< "${FDISK_INFO}" | sed --quiet --regexp-extended 's/^Sector\ssize\s\(logical\/physical\)\:\s([[:digit:]]+)\sbytes\s\/\s[[:digit:]]+\sbytes/\1/p';
 	);
 	readonly PARTITION_OFFSET="$(
-		sed --quiet --regexp-extended "s/(..*)\s([[:digit:]]+)\s[[:digit:]]+\s([[:digit:]]+)\s\s..*$/,offset=\$\(\("${SECTOR_SIZE}"\*\2\)\),sizelimit=\$\(\("${SECTOR_SIZE}"\*\3\)\)/p" <<< "${CHOSEN_PARTITION}";
+		sed --quiet --regexp-extended "s/(..*)\s+([[:digit:]]+)\s+[[:digit:]]+\s+([[:digit:]]+)\s+..*$/,offset=\$\(\("${SECTOR_SIZE}"\*\2\)\),sizelimit=\$\(\("${SECTOR_SIZE}"\*\3\)\)/p" <<< "${CHOSEN_PARTITION}";
 	)";
-	
 	if [ -n "${PARTITION_OFFSET}" ]; then
 		printf "Offset required for this partition.\n\n";
 	fi
