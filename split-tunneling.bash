@@ -7,7 +7,7 @@ VPN_IFACE="tun0"
 LOCAL_IFACE="eth0"
 ##################
 
-ROUTING_TABLE_EXIT_CODE="$(ip route show table FROM_VPN >/dev/null 2>&1; echo $?)"
+ROUTING_TABLE_EXIT_CODE="$(ip route show table FROM_VPN >/dev/null 2>&1; printf $?)"
 ROUTING_TABLE_CONTENTS="$(ip route show table FROM_VPN 2>/dev/null)"
 if [[ "${ROUTING_TABLE_EXIT_CODE}" -ne 0 ]] || [[ -z "${ROUTING_TABLE_CONTENTS}" ]]; then
   IP_ROUTES="$(ip route show)"
@@ -58,31 +58,31 @@ if [[ "${ROUTING_TABLE_EXIT_CODE}" -ne 0 ]] || [[ -z "${ROUTING_TABLE_CONTENTS}"
     printf "\nInitializing routes:\n"
   # Checking if routing table names are registered.
   # http://linux-ip.net/html/tools-ip-route.html
-  if [[ "$(grep FROM_LAN /etc/iproute2/rt_tables >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-    $(echo "10 FROM_LAN" >> /etc/iproute2/rt_tables)
+  if [[ "$(grep FROM_LAN /etc/iproute2/rt_tables >/dev/null 2>&1; printf $?)" -ne 0 ]]; then
+    eval "$(printf "10 FROM_LAN\n" >> /etc/iproute2/rt_tables)"
   fi
-  if [[ "$(grep FROM_VPN /etc/iproute2/rt_tables >/dev/null 2>&1; echo $?)" -ne 0 ]]; then
-    $(echo "20 FROM_VPN" >> /etc/iproute2/rt_tables)
+  if [[ "$(grep FROM_VPN /etc/iproute2/rt_tables >/dev/null 2>&1; printf $?)" -ne 0 ]]; then
+    eval "$(printf "20 FROM_VPN\n" >> /etc/iproute2/rt_tables)"
   fi
   # Build separate routing tables for local and remote traffic.
   NEW_ROUTING_TABLE="ip route del default;"
-  NEW_ROUTING_TABLE+="ip route add default via "${VPN_GATEWAY}" dev "${VPN_IFACE}";"
+  NEW_ROUTING_TABLE+="ip route add default via ${VPN_GATEWAY} dev ${VPN_IFACE};"
   CURRENT_ROUTING_TABLES=$(ip rule list | awk '/lookup/ {print $NF}')
-  if [[ $(grep FROM_ <<<"${CURRENT_ROUTING_TABLES}") ]]; then
+  if [[ $(grep -q FROM_ <<<"${CURRENT_ROUTING_TABLES}") -eq 0 ]]; then
     NEW_ROUTING_TABLE+="ip rule delete table FROM_LAN;"
     NEW_ROUTING_TABLE+="ip rule delete table FROM_VPN;"
   fi
-  NEW_ROUTING_TABLE+="ip rule add from "${LOCAL_IFACE_ADDR}" table FROM_LAN;"
-  NEW_ROUTING_TABLE+="ip rule add from "${VPN_IFACE_ADDR}" table FROM_VPN;"
+  NEW_ROUTING_TABLE+="ip rule add from ${LOCAL_IFACE_ADDR} table FROM_LAN;"
+  NEW_ROUTING_TABLE+="ip rule add from ${VPN_IFACE_ADDR} table FROM_VPN;"
   # Recreate routes as part of the remote routing tables.
   # I have tried "ip route change", but I always get "no such file" error.
-  NEW_ROUTING_TABLE+="ip route del 0.0.0.0/1 via "${VPN_GATEWAY}" dev "${VPN_IFACE}";"
-  NEW_ROUTING_TABLE+="ip route add 0.0.0.0/1 via "${VPN_GATEWAY}" dev "${VPN_IFACE}" table FROM_VPN;"
-  NEW_ROUTING_TABLE+="ip route del 128.0.0.0/1 via "${VPN_GATEWAY}" dev "${VPN_IFACE}";"
-  NEW_ROUTING_TABLE+="ip route add 128.0.0.0/1 via "${VPN_GATEWAY}" dev "${VPN_IFACE}" table FROM_VPN;"
+  NEW_ROUTING_TABLE+="ip route del 0.0.0.0/1 via ${VPN_GATEWAY} dev ${VPN_IFACE};"
+  NEW_ROUTING_TABLE+="ip route add 0.0.0.0/1 via ${VPN_GATEWAY} dev ${VPN_IFACE} table FROM_VPN;"
+  NEW_ROUTING_TABLE+="ip route del 128.0.0.0/1 via ${VPN_GATEWAY} dev ${VPN_IFACE};"
+  NEW_ROUTING_TABLE+="ip route add 128.0.0.0/1 via ${VPN_GATEWAY} dev ${VPN_IFACE} table FROM_VPN;"
   OLDIFS=${IFS}; IFS=$';'
   for ROUTE in ${NEW_ROUTING_TABLE}; do
-    printf "\n${ROUTE}; "
+    printf '\n%s; ' "${ROUTE}"
     eval "${ROUTE}"
   done
   IFS=${OLDIFS}
