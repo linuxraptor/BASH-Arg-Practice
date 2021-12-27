@@ -68,8 +68,10 @@ if [[ "${ROUTING_TABLE_EXIT_CODE}" -ne 0 ]] || [[ -z "${ROUTING_TABLE_CONTENTS}"
   NEW_ROUTING_TABLE="ip route del default;"
   NEW_ROUTING_TABLE+="ip route add default via ${VPN_GATEWAY} dev ${VPN_IFACE};"
   CURRENT_ROUTING_TABLES=$(ip rule list | awk '/lookup/ {print $NF}')
-  if [[ $(grep -q FROM_ <<<"${CURRENT_ROUTING_TABLES}") -eq 0 ]]; then
+  if [[ $(grep -q FROM_LAN <<<"${CURRENT_ROUTING_TABLES}"; echo $?) -eq 0 ]]; then
     NEW_ROUTING_TABLE+="ip rule delete table FROM_LAN;"
+  fi
+  if [[ $(grep -q FROM_VPN <<<"${CURRENT_ROUTING_TABLES}"; echo $?) -eq 0 ]]; then
     NEW_ROUTING_TABLE+="ip rule delete table FROM_VPN;"
   fi
   NEW_ROUTING_TABLE+="ip rule add from ${LOCAL_IFACE_ADDR} table FROM_LAN;"
