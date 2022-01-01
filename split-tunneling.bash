@@ -21,11 +21,11 @@ if [[ "${ROUTING_TABLE_EXIT_CODE}" -ne 0 ]] || [[ -z "${ROUTING_TABLE_CONTENTS}"
   printf "LAN internal gateway: %s\n" "${LAN_GATEWAY}"
 
   VPN_IFACE_INFO="$(ip address list "${VPN_IFACE}")"
-  VPN_IFACE_ADDR="$(sed -n -r 'N;s/^.*inet\s([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+)\/?[[:digit:]]?[[:digit:]]?\s.*/\1/p' <<< "${VPN_IFACE_INFO}")"
+  VPN_IFACE_ADDR="$(sed -n -r 'N;s/^.*inet\s([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/?[0-9]?[0-9]?\s.*/\1/p' <<< "${VPN_IFACE_INFO}")"
   printf "VPN internal IP: %s\n" "${VPN_IFACE_ADDR}"
 
   LOCAL_IFACE_INFO="$(ip address list "${LOCAL_IFACE}")"
-  LOCAL_IFACE_ADDR="$(sed -n -r 'N;s/^.*inet\s([[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+)\/?[[:digit:]]?[[:digit:]]?\s.*/\1/p' <<< "${LOCAL_IFACE_INFO}")"
+  LOCAL_IFACE_ADDR="$(sed -n -r 'N;s/^.*inet\s([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/?[0-9]?[0-9]?\s.*/\1/p' <<< "${LOCAL_IFACE_INFO}")"
   printf "Local internal IP: %s\n" "${LOCAL_IFACE_ADDR}"
 
   # Check if IP addresses are accessible.
@@ -55,7 +55,8 @@ if [[ "${ROUTING_TABLE_EXIT_CODE}" -ne 0 ]] || [[ -z "${ROUTING_TABLE_CONTENTS}"
     exit 1
   fi
   
-    printf "\nInitializing routes:\n"
+  printf "\nInitializing routes:\n"
+
   # Checking if routing table names are registered.
   # http://linux-ip.net/html/tools-ip-route.html
   if [[ "$(grep FROM_LAN /etc/iproute2/rt_tables >/dev/null 2>&1; printf $?)" -ne 0 ]]; then
